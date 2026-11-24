@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#263b35">
+  <meta name="description" content="Katalog perpustakaan pribadi Ruang Baca Elefen9.">
+  <title>Ruang Baca Elefen9</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./assets/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./assets/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="./"><span class="brand-mark">E9</span><span><b>Ruang Baca</b><small>ELEFEN9</small></span></a>
+    <button id="installBtn" class="button button-light" hidden>Pasang aplikasi</button>
+  </header>
+  <main class="wrap">
+    <section class="hero">
+      <p class="eyebrow">PERPUSTAKAAN PRIBADI</p>
+      <h1>Setiap buku punya cerita.</h1>
+      <p class="sub">Temukan, telusuri, dan kelola koleksi buku Ruang Baca Elefen9.</p>
+      <div class="stats">
+        <div><strong id="totalCount">0</strong><span>Total buku</span></div>
+        <div><strong id="readingCount">0</strong><span>Sedang dibaca</span></div>
+        <div><strong id="finishedCount">0</strong><span>Selesai dibaca</span></div>
+      </div>
+    </section>
+
+    <section class="toolbar">
+      <label class="search"><span>⌕</span><input id="searchInput" type="search" placeholder="Cari judul, penulis, ISBN, penerbit..."></label>
+      <select id="statusFilter" aria-label="Filter status membaca">
+        <option value="">Semua status</option><option>Belum dibaca</option><option>Sedang dibaca</option><option>Selesai</option>
+      </select>
+    </section>
+
+    <section class="catalog-head">
+      <div><h2>Katalog buku</h2><p id="resultLabel">Koleksi buku</p></div>
+      <button id="addBtn" class="button button-primary">＋ Tambah buku</button>
+    </section>
+    <div id="notice" class="notice" role="status">Data tersimpan di perangkat ini. Mode offline siap digunakan setelah aplikasi dimuat pertama kali.</div>
+    <section id="bookGrid" class="book-grid" aria-live="polite"></section>
+    <section id="emptyState" class="empty" hidden><div class="empty-icon">▤</div><h3>Belum ada buku</h3><p>Tambahkan buku pertama ke koleksimu.</p></section>
+  </main>
+
+  <dialog id="bookDialog">
+    <form id="bookForm" method="dialog">
+      <div class="dialog-head"><div><p class="eyebrow">DATA KOLEKSI</p><h2 id="dialogTitle">Tambah buku</h2></div><button type="button" id="closeDialog" class="close">×</button></div>
+      <input type="hidden" id="bookId">
+      <div class="form-grid">
+        <label class="wide">Judul buku *<input id="title" required maxlength="180"></label>
+        <label>Penulis<input id="author" maxlength="120"></label>
+        <label>ISBN<input id="isbn" maxlength="30"></label>
+        <label>Penerbit<input id="publisher" maxlength="120"></label>
+        <label>Tahun<input id="year" type="number" min="0" max="2100"></label>
+        <label>Tema / genre<input id="genre" maxlength="80"></label>
+        <label>Status membaca<select id="readingStatus"><option>Belum dibaca</option><option>Sedang dibaca</option><option>Selesai</option></select></label>
+        <label>Status koleksi<select id="availability"><option>Tersedia</option><option>Dipinjam</option></select></label>
+        <label id="borrowerWrap">Nama peminjam<input id="borrower" maxlength="100"></label>
+        <label>Tanggal perolehan<input id="acquired" type="date"></label>
+        <label>Sumber perolehan<select id="source"><option value="">Pilih</option><option>Beli</option><option>Hadiah</option><option>Lainnya</option></select></label>
+        <label>Pemberi<input id="giver" maxlength="100"></label>
+        <label>Keputusan<select id="disposition"><option>Disimpan</option><option>Untuk dijual</option><option>Untuk didonasikan</option></select></label>
+        <label>Harga (opsional)<input id="price" type="number" min="0"></label>
+        <label class="wide">Sampul buku<input id="cover" type="file" accept="image/png,image/jpeg,image/webp"><small>Gambar disimpan di perangkat ini pada versi awal.</small></label>
+        <label class="wide">Catatan pribadi<textarea id="notes" rows="3"></textarea></label>
+        <label class="check wide"><input id="published" type="checkbox" checked> Tampilkan di katalog publik (pengaturan ini akan digunakan saat sinkronisasi online diaktifkan)</label>
+      </div>
+      <div class="dialog-actions"><button type="button" id="cancelBtn" class="button button-light">Batal</button><button type="submit" class="button button-primary">Simpan buku</button></div>
+    </form>
+  </dialog>
+  <footer><span>Ruang Baca Elefen9</span><span id="connectionState">Memeriksa koneksi…</span></footer>
+  <script src="./assets/app.js"></script>
+</body>
+</html>
