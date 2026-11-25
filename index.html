@@ -104,6 +104,48 @@
 
       <input type="hidden" id="bookId">
 
+      
+<div class="lookup-panel">
+  <p class="eyebrow">PENCARIAN OTOMATIS</p>
+  <h3>Lengkapi data dari internet</h3>
+  <p>Gunakan ISBN atau foto sampul untuk mencari informasi buku.</p>
+
+  <div class="lookup-method">
+    <label for="lookupIsbn">1. Cari menggunakan ISBN</label>
+    <div class="lookup-row">
+      <input
+        id="lookupIsbn"
+        type="text"
+        placeholder="Masukkan nomor ISBN"
+        maxlength="30"
+      >
+      <button
+        type="button"
+        id="lookupIsbnBtn"
+        class="button button-primary"
+      >Cari ISBN</button>
+    </div>
+  </div>
+
+  <div class="lookup-method">
+    <label for="lookupPhoto">2. Cari menggunakan foto sampul</label>
+    <input
+      id="lookupPhoto"
+      type="file"
+      accept="image/*"
+      capture="environment"
+    >
+    <button
+      type="button"
+      id="lookupPhotoBtn"
+      class="button button-light"
+    >Kenali buku dari foto</button>
+  </div>
+
+  <p id="lookupStatus" role="status"></p>
+  <div id="lookupResults"></div>
+</div>
+
       <div class="form-grid">
         <label class="wide">Judul buku *
           <input id="title" required maxlength="180">
