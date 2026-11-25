@@ -162,6 +162,46 @@ async function apiPost(action, book = {}, token = ownerToken) {
   return result;
 }
 
+
+function fileToDataURL(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(
+      new Error('Gambar tidak dapat dibaca.')
+    );
+
+    reader.readAsDataURL(file);
+  });
+}
+
+async function uploadCoverDataURL(dataURL, fileName, mimeType) {
+  const base64Data = dataURL.split(',')[1];
+
+  const response = await fetch(API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'text/plain;charset=utf-8'
+    },
+    body: JSON.stringify({
+      action: 'uploadCover',
+      token: ownerToken,
+      base64Data,
+      fileName,
+      mimeType
+    })
+  });
+
+  const result = await response.json();
+
+  if (!result.success) {
+    throw new Error(result.message || 'Unggah sampul gagal.');
+  }
+
+  return result.url;
+}
+
 async function syncQueue() {
   if (syncing || !navigator.onLine || !ownerToken || !isOwner) {
     return;
@@ -556,11 +596,34 @@ $('bookForm').onsubmit = async event => {
   const id = $('bookId').value || crypto.randomUUID();
   const old = books.find(book => book.id === id);
 
-  if ($('cover').files.length) {
-    alert('Fitur unggah sampul belum diaktifkan. Simpan buku tanpa sampul dahulu.');
+  const coverFile = $('cover').files[0];
+let coverURL = old ? old.cover || '' : '';
+
+if (coverFile) {
+  try {
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(coverFile.type)) {
+      throw new Error('Gunakan gambar JPG, PNG, atau WebP.');
+    }
+
+    if (coverFile.size > 3 * 1024 * 1024) {
+      throw new Error('Ukuran gambar maksimal 3 MB.');
+    }
+
+    $('notice').textContent = 'Mengunggah sampul buku...';
+
+    const dataURL = await fileToDataURL(coverFile);
+
+    coverURL = await uploadCoverDataURL(
+      dataURL,
+      coverFile.name,
+      coverFile.type
+    );
+  } catch (error) {
+    alert('Gagal mengunggah sampul: ' + error.message);
     return;
   }
-
+}
+  
   const book = {
     id,
     title: $('title').value.trim(),
@@ -579,7 +642,7 @@ $('bookForm').onsubmit = async event => {
     price: $('price').value,
     notes: $('notes').value,
     published: $('published').checked,
-    cover: old ? old.cover || '' : ''
+    cover: coverURL
   };
 
   try {
