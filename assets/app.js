@@ -733,3 +733,141 @@ $('installBtn').onclick = async () => {
   setOwnerMode(false);
   await loadCatalog();
 })();
+
+// ========================================
+// PENCARIAN OTOMATIS DATA BUKU DENGAN ISBN
+// ========================================
+
+(function () {
+  const isbnInput = document.getElementById('lookupIsbn');
+  const searchButton = document.getElementById('lookupIsbnBtn');
+  const statusBox = document.getElementById('lookupStatus');
+  const resultsBox = document.getElementById('lookupResults');
+
+  if (!isbnInput || !searchButton) return;
+
+  searchButton.addEventListener('click', async function () {
+    const isbn = isbnInput.value.replace(/[^0-9Xx]/g, '');
+
+    if (!isbn) {
+      statusBox.textContent = 'Masukkan nomor ISBN terlebih dahulu.';
+      return;
+    }
+
+    searchButton.disabled = true;
+    statusBox.textContent = 'Sedang mencari data buku...';
+    resultsBox.innerHTML = '';
+
+    try {
+      let results = [];
+
+      // Pencarian pertama melalui Google Books
+      const googleResponse = await fetch(
+        'https://www.googleapis.com/books/v1/volumes?q=isbn:' +
+        encodeURIComponent(isbn) +
+        '&maxResults=10'
+      );
+
+      if (googleResponse.ok) {
+        const googleData = await googleResponse.json();
+        results = googleData.items || [];
+      }
+
+      // Jika tidak ditemukan, coba Open Library
+      if (results.length === 0) {
+        const openResponse = await fetch(
+          'https://openlibrary.org/search.json?isbn=' +
+          encodeURIComponent(isbn) +
+          '&limit=10'
+        );
+
+        if (openResponse.ok) {
+          const openData = await openResponse.json();
+
+          results = (openData.docs || []).map(book => ({
+            volumeInfo: {
+              title: book.title || '',
+              authors: book.author_name || [],
+              publisher: book.publisher?.[0] || '',
+              publishedDate: book.first_publish_year
+                ? String(book.first_publish_year)
+                : '',
+              industryIdentifiers: [{ identifier: isbn }],
+              categories: book.subject?.slice(0, 3) || [],
+              imageLinks: book.cover_i
+                ? {
+                    thumbnail:
+                      'https://covers.openlibrary.org/b/id/' +
+                      book.cover_i +
+                      '-M.jpg'
+                  }
+                : {}
+            }
+          }));
+        }
+      }
+
+      if (results.length === 0) {
+        statusBox.textContent =
+          'Buku belum ditemukan. Periksa kembali nomor ISBN.';
+        return;
+      }
+
+      statusBox.textContent =
+        'Ditemukan ' + results.length + ' kemungkinan data buku. Pilih yang sesuai.';
+
+      results.forEach(item => {
+        const info = item.volumeInfo || {};
+
+        const card = document.createElement('div');
+        card.style.cssText =
+          'background:white;border:1px solid #ddd;padding:12px;' +
+          'border-radius:12px;margin-top:10px;';
+
+        const title = document.createElement('strong');
+        title.textContent = info.title || 'Judul tidak tersedia';
+        card.appendChild(title);
+
+        const details = document.createElement('p');
+        details.textContent =
+          'Penulis: ' + (info.authors || []).join(', ') +
+          ' | Penerbit: ' + (info.publisher || '-') +
+          ' | Tahun: ' + (info.publishedDate || '-');
+        card.appendChild(details);
+
+        const chooseButton = document.createElement('button');
+        chooseButton.type = 'button';
+        chooseButton.textContent = 'Gunakan data buku ini';
+
+        chooseButton.addEventListener('click', function () {
+          document.getElementById('title').value = info.title || '';
+          document.getElementById('author').value =
+            (info.authors || []).join(', ');
+
+          document.getElementById('isbn').value = isbn;
+          document.getElementById('publisher').value =
+            info.publisher || '';
+
+          document.getElementById('year').value =
+            (info.publishedDate || '').substring(0, 4);
+
+          document.getElementById('genre').value =
+            (info.categories || []).join(', ');
+
+          statusBox.textContent =
+            'Data buku berhasil dimasukkan ke formulir. Silakan periksa kembali.';
+          resultsBox.innerHTML = '';
+        });
+
+        card.appendChild(chooseButton);
+        resultsBox.appendChild(card);
+      });
+
+    } catch (error) {
+      statusBox.textContent =
+        'Pencarian gagal. Periksa koneksi internet dan coba lagi.';
+    } finally {
+      searchButton.disabled = false;
+    }
+  });
+})();
