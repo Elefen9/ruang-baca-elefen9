@@ -1,5 +1,5 @@
 
-const CACHE = 'elefen9-pwa-v4';
+const CACHE = 'elefen9-pwa-v5';
 
 const FILES = [
   './',
