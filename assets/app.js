@@ -871,3 +871,177 @@ $('installBtn').onclick = async () => {
     }
   });
 })();
+
+
+// ========================================
+// PENCARIAN BUKU DARI FOTO SAMPUL
+// ========================================
+
+(function () {
+  const photoInput = document.getElementById('lookupPhoto');
+  const photoButton = document.getElementById('lookupPhotoBtn');
+  const statusBox = document.getElementById('lookupStatus');
+  const resultsBox = document.getElementById('lookupResults');
+
+  if (!photoInput || !photoButton) return;
+
+  photoButton.addEventListener('click', async function () {
+    const file = photoInput.files[0];
+
+    if (!file) {
+      statusBox.textContent = 'Pilih foto sampul buku terlebih dahulu.';
+      return;
+    }
+
+    if (!window.Tesseract) {
+      statusBox.textContent = 'Mesin pembaca foto belum berhasil dimuat. Periksa koneksi internet.';
+      return;
+    }
+
+    photoButton.disabled = true;
+    resultsBox.innerHTML = '';
+    statusBox.textContent = 'Sedang membaca tulisan pada foto. Mohon tunggu...';
+
+    try {
+      // Foto yang dipilih juga disiapkan sebagai sampul buku.
+      const transfer = new DataTransfer();
+      transfer.items.add(file);
+      document.getElementById('cover').files = transfer.files;
+
+      // Membaca tulisan pada foto.
+      const result = await Tesseract.recognize(
+        file,
+        'eng+ind',
+        {
+          logger: function (progress) {
+            if (progress.status === 'recognizing text') {
+              statusBox.textContent =
+                'Membaca tulisan: ' +
+                Math.round(progress.progress * 100) + '%';
+            }
+          }
+        }
+      );
+
+      const text = result.data.text || '';
+
+      // Mencari kemungkinan nomor ISBN.
+      const isbnMatch = text.match(
+        /(?:ISBN(?:-1[03])?\s*:?\s*)?((?:97[89][\s-]?)?[0-9Xx][0-9Xx\s-]{8,}[0-9Xx])/i
+      );
+
+      let isbn = '';
+
+      if (isbnMatch) {
+        isbn = isbnMatch[1].replace(/[^0-9Xx]/g, '');
+      }
+
+      if (isbn && (isbn.length === 10 || isbn.length === 13)) {
+        document.getElementById('lookupIsbn').value = isbn;
+        statusBox.textContent =
+          'ISBN terdeteksi: ' + isbn + '. Sedang mencari data buku...';
+
+        document.getElementById('lookupIsbnBtn').click();
+        return;
+      }
+
+      // Jika ISBN tidak terbaca, gunakan tulisan foto sebagai judul pencarian.
+      const lines = text
+        .split('\n')
+        .map(line => line.trim())
+        .filter(line => line.length >= 3);
+
+      const titleGuess = lines
+        .filter(line => !/ISBN|PENERBIT|CETAKAN|EDISI/i.test(line))
+        .slice(0, 3)
+        .join(' ')
+        .slice(0, 100);
+
+      if (!titleGuess) {
+        statusBox.textContent =
+          'Tulisan pada foto belum terbaca. Coba gunakan foto yang lebih jelas.';
+        return;
+      }
+
+      statusBox.textContent =
+        'ISBN tidak ditemukan. Mencari berdasarkan tulisan: ' + titleGuess;
+
+      const response = await fetch(
+        'https://www.googleapis.com/books/v1/volumes?q=' +
+        encodeURIComponent(titleGuess) +
+        '&maxResults=8'
+      );
+
+      if (!response.ok) throw new Error('Pencarian gagal.');
+
+      const data = await response.json();
+      const books = data.items || [];
+
+      if (!books.length) {
+        statusBox.textContent =
+          'Buku belum ditemukan. Tulisan yang terbaca: ' + titleGuess;
+        return;
+      }
+
+      statusBox.textContent =
+        'Pilih buku yang paling sesuai dengan foto sampul.';
+
+      books.forEach(item => {
+        const info = item.volumeInfo || {};
+
+        const card = document.createElement('div');
+        card.style.cssText =
+          'background:white;border:1px solid #ddd;padding:12px;' +
+          'border-radius:12px;margin-top:10px;';
+
+        const title = document.createElement('strong');
+        title.textContent = info.title || 'Judul tidak tersedia';
+        card.appendChild(title);
+
+        const detail = document.createElement('p');
+        detail.textContent =
+          'Penulis: ' + (info.authors || []).join(', ') +
+          ' | Penerbit: ' + (info.publisher || '-') +
+          ' | Tahun: ' + (info.publishedDate || '-');
+        card.appendChild(detail);
+
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.textContent = 'Gunakan data buku ini';
+
+        button.addEventListener('click', function () {
+          document.getElementById('title').value = info.title || '';
+          document.getElementById('author').value =
+            (info.authors || []).join(', ');
+          document.getElementById('publisher').value =
+            info.publisher || '';
+          document.getElementById('year').value =
+            (info.publishedDate || '').substring(0, 4);
+          document.getElementById('genre').value =
+            (info.categories || []).join(', ');
+
+          const identifiers = info.industryIdentifiers || [];
+          const isbnItem = identifiers.find(item =>
+            item.type === 'ISBN_13'
+          ) || identifiers[0];
+
+          document.getElementById('isbn').value =
+            isbnItem ? isbnItem.identifier : '';
+
+          statusBox.textContent =
+            'Data berhasil dimasukkan. Foto pilihanmu akan digunakan sebagai sampul.';
+          resultsBox.innerHTML = '';
+        });
+
+        card.appendChild(button);
+        resultsBox.appendChild(card);
+      });
+
+    } catch (error) {
+      statusBox.textContent =
+        'Pengenalan foto gagal. Coba foto lain atau gunakan pencarian ISBN.';
+    } finally {
+      photoButton.disabled = false;
+    }
+  });
+})();
