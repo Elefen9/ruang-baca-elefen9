@@ -541,3 +541,65 @@ footer {
     gap: 12px;
   }
 }
+
+/* Panel pencarian otomatis */
+.lookup-panel {
+  background: #f5f1e7;
+  border: 1px solid #e4dccb;
+  border-radius: 16px;
+  padding: 18px;
+  margin-bottom: 22px;
+}
+
+.lookup-panel h3 {
+  margin: 5px 0;
+  color: #365b46;
+}
+
+.lookup-panel > p {
+  color: #766d60;
+  font-size: 14px;
+}
+
+.lookup-method {
+  margin-top: 18px;
+}
+
+.lookup-method label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.lookup-row {
+  display: flex;
+  gap: 8px;
+}
+
+.lookup-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+.lookup-panel button {
+  margin-top: 8px;
+}
+
+#lookupStatus {
+  margin-top: 12px;
+  font-size: 13px;
+}
+
+#lookupResults {
+  margin-top: 14px;
+}
+
+@media (max-width: 480px) {
+  .lookup-row {
+    flex-direction: column;
+  }
+
+  .lookup-panel {
+    padding: 14px;
+  }
+}
